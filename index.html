@@ -2,24 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AllOrigins JSONP Chrome Emulator</title>
+  <title>Chrome Emulator</title>
   <style>
-    body { margin:0; font-family:sans-serif; }
+    body { margin: 0; font-family: sans-serif; }
     #toolbar {
-      display:flex; align-items:center;
-      background:#f1f3f4; padding:4px;
-      box-shadow:0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      background: #f1f3f4;
+      padding: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    #back, #forward, #go { margin:0 4px; }
+    #back, #forward, #go { margin: 0 4px; }
     #url {
-      flex:1; padding:4px;
-      border:1px solid #ccc; border-radius:4px;
+      flex: 1;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
     #content {
-      padding:8px;
-      height:calc(100vh - 40px);
-      overflow:auto;
-      background:#fff;
+      padding: 8px;
+      height: calc(100vh - 40px);
+      overflow: auto;
+      background: #fff;
     }
   </style>
 </head>
@@ -33,32 +37,36 @@
   <div id="content">Welcome! Enter a URL above.</div>
 
   <script>
-    const backBtn    = document.getElementById('back');
+    const backBtn = document.getElementById('back');
     const forwardBtn = document.getElementById('forward');
-    const goBtn      = document.getElementById('go');
-    const urlInput   = document.getElementById('url');
+    const goBtn = document.getElementById('go');
+    const urlInput = document.getElementById('url');
     const contentDiv = document.getElementById('content');
 
-    // Global JSONP callback invoked by AllOrigins
+    let currentURL = '';
+
+    // JSONP callback
     function process(data) {
       document.title = data.contents.match(/<title>([^<]+)<\/title>/)?.[1] || 'No Title';
       contentDiv.innerHTML = data.contents;
       urlInput.value = currentURL;
     }
 
-    let currentURL = '';
-
-    // Load a URL via JSONP
+    // Load via AllOrigins using JSONP
     function loadJSONP(toURL, addHistory = true) {
       currentURL = toURL;
       const script = document.createElement('script');
       script.src = 'https://api.allorigins.win/get?callback=process&url=' 
                    + encodeURIComponent(toURL);
       document.head.appendChild(script);
-      if (addHistory) history.pushState({ url: toURL }, '', toURL);
+
+      if (addHistory) {
+        const safePath = '#u=' + encodeURIComponent(toURL);
+        history.pushState({ url: toURL }, '', safePath);
+      }
     }
 
-    // Event handlers
+    // Go button / Enter key
     goBtn.onclick = () => {
       let u = urlInput.value.trim();
       if (!/^https?:\/\//.test(u)) u = 'https://' + u;
@@ -67,12 +75,21 @@
     urlInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') goBtn.click();
     });
-    backBtn.onclick    = () => history.back();
-    forwardBtn.onclick = () => history.forward();
 
-    // Handle back/forward navigation
+    // Back/forward support
+    backBtn.onclick = () => history.back();
+    forwardBtn.onclick = () => history.forward();
     window.addEventListener('popstate', e => {
       if (e.state?.url) loadJSONP(e.state.url, false);
+    });
+
+    // On load: parse hash to restore last page
+    window.addEventListener('DOMContentLoaded', () => {
+      const match = location.hash.match(/^#u=(.+)$/);
+      if (match) {
+        const decodedURL = decodeURIComponent(match[1]);
+        loadJSONP(decodedURL, false);
+      }
     });
   </script>
 </body>
