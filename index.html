@@ -81,9 +81,11 @@
     backBtn.onclick = () => history.back();
     forwardBtn.onclick = () => history.forward();
 
-    window.addEventListener('popstate', e => {
-      if (e.state?.url) {
-        loadJSONP(e.state.url, false);
+    window.addEventListener('hashchange', () => {
+      const match = location.hash.match(/^#u=(.+)$/);
+      if (match) {
+        const decodedURL = decodeURIComponent(match[1]);
+        loadJSONP(decodedURL, false);
       }
     });
 
