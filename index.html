@@ -59,10 +59,11 @@
       script.src = 'https://api.allorigins.win/get?callback=process&url=' 
                    + encodeURIComponent(toURL);
       document.head.appendChild(script);
-
+    
       if (addHistory) {
-        const safePath = '#u=' + encodeURIComponent(toURL);
-        history.pushState({ url: toURL }, '', safePath);
+        // Just update the hash — don't touch the full path
+        location.hash = 'u=' + encodeURIComponent(toURL);
+        history.pushState({ url: toURL }, ''); // No third arg = same URL
       }
     }
 
