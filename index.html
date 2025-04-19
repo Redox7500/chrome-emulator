@@ -52,39 +52,42 @@
       urlInput.value = currentURL;
     }
 
-    // Load via AllOrigins using JSONP
+    // Load via AllOrigins JSONP
     function loadJSONP(toURL, addHistory = true) {
       currentURL = toURL;
+
       const script = document.createElement('script');
       script.src = 'https://api.allorigins.win/get?callback=process&url=' 
                    + encodeURIComponent(toURL);
       document.head.appendChild(script);
-    
+
       if (addHistory) {
-        // Just update the hash — don't touch the full path
-        location.hash = 'u=' + encodeURIComponent(toURL);
-        history.pushState({ url: toURL }, ''); // No third arg = same URL
+        const hash = '#u=' + encodeURIComponent(toURL);
+        location.hash = hash;
+        history.pushState({ url: toURL }, '', hash); // ✅ Safe
       }
     }
 
-    // Go button / Enter key
     goBtn.onclick = () => {
       let u = urlInput.value.trim();
       if (!/^https?:\/\//.test(u)) u = 'https://' + u;
       loadJSONP(u);
     };
+
     urlInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') goBtn.click();
     });
 
-    // Back/forward support
     backBtn.onclick = () => history.back();
     forwardBtn.onclick = () => history.forward();
+
     window.addEventListener('popstate', e => {
-      if (e.state?.url) loadJSONP(e.state.url, false);
+      if (e.state?.url) {
+        loadJSONP(e.state.url, false);
+      }
     });
 
-    // On load: parse hash to restore last page
+    // Load from hash on page load
     window.addEventListener('DOMContentLoaded', () => {
       const match = location.hash.match(/^#u=(.+)$/);
       if (match) {
